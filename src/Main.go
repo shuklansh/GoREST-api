@@ -27,9 +27,15 @@ var client *mongo.Client
 
 type Person struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username string             `json:"username,omitempty" bson:"username,omitempty"`
-	Email    string             `json:"email,omitempty" bson:"email,omitempty"`
-	Password string             `json:"-,omitempty" bson:"-,omitempty"` //the value "-" ensures we are not able to see the password value in the get operation hence ensuring security :)
+	Username string             `json:"Username,omitempty" bson:"Username,omitempty"`
+	Email    string             `json:"Email,omitempty" bson:"Email,omitempty"`
+	Password string             `json:"Password,omitempty" bson:"Password,omitempty"` //the value "-" ensures we are not able to see the password value in the get operation hence ensuring security :)
+}
+
+type User struct {
+	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Username string             `json:"Username,omitempty" bson:"Username,omitempty"`
+	Email    string             `json:"Email,omitempty" bson:"Email,omitempty"`
 }
 
 // Posts should have the following Attributes. All fields are mandatory unless marked optional:
@@ -42,7 +48,7 @@ type Post struct {
 	Posted_timestamp string             `json:"Posted_timestamp,omitempty" bson:"Posted_timestamp,omitempty"`
 	Caption          string             `json:"Caption,omitempty" bson:"Caption,omitempty"`
 	Img              string             `json:"img,omitempty" bson:"img,omitempty"`
-	Authid           string             `json:"-,omitempty" bson:"-,omitempty"`
+	Authid           string             `json:"Authid,omitempty" bson:"Authid,omitempty"`
 }
 
 ///////////////// users /////////////////////////
@@ -61,7 +67,7 @@ func CreatePersonEndpoint(response http.ResponseWriter, request *http.Request) {
 //GET users info in database instauserdatabase//
 func GetPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
-	var people []Person
+	var user []User
 	collection := client.Database("instauserdatabase").Collection("users")
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cursor, err := collection.Find(ctx, bson.M{})
@@ -72,16 +78,16 @@ func GetPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
 	}
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var person Person
+		var person User
 		cursor.Decode(&person)
-		people = append(people, person)
+		user = append(user, person)
 	}
 	if err := cursor.Err(); err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
 		return
 	}
-	json.NewEncoder(response).Encode(people)
+	json.NewEncoder(response).Encode(user)
 }
 
 //
@@ -89,16 +95,16 @@ func GetPersonEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
-	var person Person
+	var user User
 	collection := client.Database("instauserdatabase").Collection("users")
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	err := collection.FindOne(ctx, Person{ID: id}).Decode(&person)
+	err := collection.FindOne(ctx, User{ID: id}).Decode(&user)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
 		return
 	}
-	json.NewEncoder(response).Encode(person)
+	json.NewEncoder(response).Encode(user)
 }
 
 ////////////////// post /////////////////////////
